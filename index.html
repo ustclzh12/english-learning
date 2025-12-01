@@ -182,15 +182,16 @@
             bar.innerText = `JS错误: ${msg} (行:${line})`;
         };
 
-        // === 1. 配置 (请确认路径) ===
+        // === 1. 修正后的文件路径 (适配 GitHub Pages) ===
+        // 确保你的 json 文件夹和 index.html 在同一级目录下
         const books = [
-            { name: "初中词汇", file: "english-vocabulary-master/json/1-初中-顺序.json" },
-            { name: "高中词汇", file: "english-vocabulary-master/json/2-高中-顺序.json" },
-            { name: "四级词汇", file: "english-vocabulary-master/json/3-CET4-顺序.json" },
-            { name: "六级词汇", file: "english-vocabulary-master/json/4-CET6-顺序.json" },
-            { name: "考研词汇", file: "english-vocabulary-master/json/5-考研-顺序.json" },
-            { name: "托福词汇", file: "english-vocabulary-master/json/6-托福-顺序.json" },
-            { name: "SAT词汇", file: "english-vocabulary-master/json/7-SAT-顺序.json" }
+            { name: "初中词汇", file: "json/1-初中-顺序.json" },
+            { name: "高中词汇", file: "json/2-高中-顺序.json" },
+            { name: "四级词汇", file: "json/3-CET4-顺序.json" },
+            { name: "六级词汇", file: "json/4-CET6-顺序.json" },
+            { name: "考研词汇", file: "json/5-考研-顺序.json" },
+            { name: "托福词汇", file: "json/6-托福-顺序.json" },
+            { name: "SAT词汇", file: "json/7-SAT-顺序.json" }
         ];
 
         // 全局变量
