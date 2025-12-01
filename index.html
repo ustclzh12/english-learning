@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>THE FORGE - 记忆版</title>
+    <style>
+        /* === 基础样式变量 === */
+        :root {
+            --bg: #121212; --sidebar: #181818; --card: #1e1e1e;
+            --text: #e0e0e0; --sub-text: #a0a0a0;
+            --accent: #bb86fc; --success: #03dac6; --danger: #cf6679;
+            --border: #333; --shadow: rgba(0,0,0,0.5);
+        }
+        body.light-mode {
+            --bg: #f0f2f5; --sidebar: #ffffff; --card: #ffffff;
+            --text: #333333; --sub-text: #666666;
+            --accent: #6200ee; --success: #018786; --danger: #b00020;
+            --border: #ddd; --shadow: rgba(0,0,0,0.1);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background-color: var(--bg); color: var(--text); height: 100vh; display: grid; grid-template-columns: 240px 1fr 280px; overflow: hidden; transition: 0.3s; }
+
+        /* === 错误调试条 === */
+        #error-bar { display: none; background: #b00020; color: white; padding: 10px; position: fixed; top: 0; left: 0; width: 100%; z-index: 9999; font-size: 12px; }
+
+        /* === 手机适配 === */
+        @media (max-width: 768px) {
+            body { grid-template-columns: 1fr; grid-template-rows: 60px 1fr 0px; }
+            .sidebar {
+                flex-direction: row !important; position: fixed; bottom: 0; width: 100%; height: 60px;
+                border-top: 1px solid var(--border); border-right: none !important; padding: 0 !important;
+                justify-content: space-around; z-index: 100;
+            }
+            .sidebar .logo { display: none; }
+            .stats-panel { position: fixed; top: 0; right: -100%; width: 85%; height: 100%; z-index: 150; transition: 0.3s; box-shadow: -5px 0 15px rgba(0,0,0,0.5); }
+            .stats-panel.open { right: 0; }
+            .mobile-header { display: flex !important; }
+            .card-container { height: 380px !important; margin-top: 10px; }
+            .word-text { font-size: 36px !important; }
+        }
+
+        .mobile-header { display: none; justify-content: space-between; align-items: center; padding: 0 20px; background: var(--sidebar); border-bottom: 1px solid var(--border); z-index: 50; }
+
+        /* === 侧边栏 === */
+        .sidebar { background-color: var(--sidebar); border-right: 1px solid var(--border); padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+        .logo { font-size: 20px; font-weight: bold; color: var(--accent); margin-bottom: 20px; cursor: pointer; }
+        .nav-item { padding: 12px; border-radius: 8px; cursor: pointer; color: var(--sub-text); display: flex; align-items: center; gap: 10px; transition: 0.2s; }
+        .nav-item:hover, .nav-item.active { background-color: var(--bg); color: var(--text); }
+
+        /* === 主区域 === */
+        .main-area { position: relative; width: 100%; height: 100%; overflow-y: auto; padding-bottom: 80px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .page-section { display: none; width: 100%; height: 100%; flex-direction: column; align-items: center; justify-content: center; }
+        .page-section.active { display: flex; }
+
+        /* 卡片 */
+        .card-container { width: 90%; max-width: 500px; height: 420px; perspective: 1000px; cursor: pointer; margin-bottom: 20px; position: relative; }
+        .card-inner { position: relative; width: 100%; height: 100%; text-align: center; transition: transform 0.5s; transform-style: preserve-3d; box-shadow: 0 10px 30px var(--shadow); border-radius: 20px; }
+        .card-container.flipped .card-inner { transform: rotateY(180deg); }
+        .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; background-color: var(--card); border-radius: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 25px; border: 1px solid var(--border); }
+        .card-back { transform: rotateY(180deg); justify-content: flex-start; padding-top: 40px; }
+        
+        .word-text { font-size: 46px; font-weight: bold; margin-bottom: 10px; color: var(--text); }
+        .phonetic { font-family: serif; font-size: 18px; color: var(--accent); margin-bottom: 15px; }
+        .meaning { font-size: 20px; margin-bottom: 15px; color: var(--success); line-height: 1.5; width: 100%; overflow-y: auto; max-height: 150px;}
+        .sentence { font-style: italic; color: var(--sub-text); background: var(--bg); padding: 10px; border-radius: 8px; font-size: 14px; text-align: left; width: 100%; border-left: 3px solid var(--accent); }
+
+        /* 按钮 */
+        .controls { display: flex; gap: 15px; width: 90%; max-width: 500px; }
+        .btn-control { flex: 1; padding: 15px; border: none; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; color: #fff; box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
+        
+        /* 模态框 */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 200; display: flex; align-items: center; justify-content: center; }
+        .modal-content { background: var(--card); width: 90%; max-width: 400px; border-radius: 15px; padding: 25px; border: 1px solid var(--border); text-align: center; }
+        .book-btn { display: block; width: 100%; padding: 15px; margin-bottom: 10px; background: var(--bg); border: 1px solid var(--border); color: var(--text); border-radius: 10px; text-align: left; cursor: pointer; font-size: 16px; }
+        .book-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+        /* 错题本 */
+        .list-container { width: 90%; max-width: 600px; display: grid; gap: 10px; }
+        .list-item { background: var(--card); padding: 15px; border-radius: 8px; border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+
+        /* 数据面板 */
+        .stats-panel { background-color: var(--sidebar); border-left: 1px solid var(--border); padding: 20px; display: flex; flex-direction: column; gap: 20px; }
+        .stat-card { background: var(--card); padding: 15px; border-radius: 10px; border: 1px solid var(--border); }
+        .stat-val { font-size: 24px; font-weight: bold; margin-top: 5px; color: var(--text); }
+        
+        .toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 10px 20px; border-radius: 30px; opacity: 0; pointer-events: none; transition: 0.3s; z-index: 300; }
+        .toast.show { opacity: 1; bottom: 100px; }
+    </style>
+</head>
+<body>
+
+    <!-- 错误调试显示条 -->
+    <div id="error-bar"></div>
+
+    <div class="mobile-header">
+        <div class="logo">⚡ THE FORGE</div>
+        <div style="font-size: 24px; cursor: pointer;" onclick="toggleStats()">📊</div>
+    </div>
+
+    <!-- 选书弹窗 -->
+    <div class="modal-overlay" id="book-modal">
+        <div class="modal-content">
+            <h2 style="color:var(--text); margin-bottom: 20px;">📚 选择一本词书</h2>
+            <div id="book-list">
+                <p style="color:red">JS初始化中...</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="sidebar">
+        <div class="logo desktop-only">⚡ THE FORGE</div>
+        <div class="nav-item active" onclick="switchTab('learn')"><span>🏠</span> 背单词</div>
+        <div class="nav-item" onclick="switchTab('wrong')"><span>📓</span> 错题本</div>
+        <div class="nav-item" onclick="toggleTheme()"><span>☀️</span> 主题</div>
+        <!-- 核心功能：重置 -->
+        <div class="nav-item" onclick="resetProgress()"><span>🔄</span> 换书/重置</div>
+    </div>
+
+    <div class="main-area">
+        <!-- 学习区 -->
+        <div id="section-learn" class="page-section active">
+            <div style="margin-bottom: 10px; color: var(--sub-text); font-size: 14px;">
+                正在学习: <span id="current-book-name" style="color:var(--accent)">未选择</span>
+            </div>
+            
+            <div class="card-container" onclick="flipCard()">
+                <div class="card-inner">
+                    <div class="card-face card-front">
+                        <div class="word-text" id="card-word">Loading...</div>
+                        <div class="phonetic" id="card-phonetic"> </div>
+                        <button onclick="event.stopPropagation(); playAudio()" style="background:none; border:1px solid var(--accent); color:var(--accent); padding:5px 15px; border-radius:20px; margin-top:10px; cursor:pointer;">🔊 发音</button>
+                        <div style="margin-top:auto; font-size: 12px; color: var(--sub-text);">(点击查看背面)</div>
+                    </div>
+                    <div class="card-face card-back">
+                        <div class="meaning" id="card-meaning">...</div>
+                        <div class="sentence" id="card-sentence">...</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button class="btn-control" style="background:var(--danger)" onclick="rateWord(0)">😩 记不住</button>
+                <button class="btn-control" style="background:var(--success)" onclick="rateWord(1)">😎 记住了</button>
+            </div>
+        </div>
+
+        <!-- 错题区 -->
+        <div id="section-wrong" class="page-section">
+            <h2 style="color:var(--text); margin-bottom: 20px;">📓 错题本</h2>
+            <div style="display:flex; gap:10px; margin-bottom: 20px;">
+                <button class="btn-control" style="background:var(--accent); padding:8px;" onclick="exportPDF()">🖨️ 打印PDF</button>
+                <button class="btn-control" style="background:var(--danger); padding:8px;" onclick="clearWrongBook()">🗑️ 清空</button>
+            </div>
+            <div class="list-container" id="wrong-container"></div>
+        </div>
+    </div>
+
+    <!-- 数据面板 -->
+    <div class="stats-panel" id="stats-panel">
+        <div style="display: flex; justify-content: space-between;">
+            <h3 style="color:var(--text)">学习进度</h3>
+            <span style="font-size: 24px; cursor: pointer;" onclick="toggleStats()">✕</span>
+        </div>
+        <div class="stat-card">
+            <div style="font-size: 12px; color: var(--sub-text);">当前进度</div>
+            <div class="stat-val" id="progress-display">0 / 0</div>
+        </div>
+        <div class="stat-card">
+            <div style="font-size: 12px; color: var(--sub-text);">错题数量</div>
+            <div class="stat-val" style="color: var(--danger)" id="wrong-count">0</div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast">提示</div>
+
+    <script>
+        // === 0. 错误捕捉 (防止卡死) ===
+        window.onerror = function(msg, url, line) {
+            const bar = document.getElementById('error-bar');
+            bar.style.display = 'block';
+            bar.innerText = `JS错误: ${msg} (行:${line})`;
+        };
+
+        // === 1. 配置 (请确认路径) ===
+        const books = [
+            { name: "初中词汇", file: "english-vocabulary-master/json/1-初中-顺序.json" },
+            { name: "高中词汇", file: "english-vocabulary-master/json/2-高中-顺序.json" },
+            { name: "四级词汇", file: "english-vocabulary-master/json/3-CET4-顺序.json" },
+            { name: "六级词汇", file: "english-vocabulary-master/json/4-CET6-顺序.json" },
+            { name: "考研词汇", file: "english-vocabulary-master/json/5-考研-顺序.json" },
+            { name: "托福词汇", file: "english-vocabulary-master/json/6-托福-顺序.json" },
+            { name: "SAT词汇", file: "english-vocabulary-master/json/7-SAT-顺序.json" }
+        ];
+
+        // 全局变量
+        let wordQueue = [];
+        let currentIndex = 0;
+        let currentBookName = "";
+        let wrongWords = JSON.parse(localStorage.getItem('forge_wrong_words')) || [];
+        let isLightMode = localStorage.getItem('forge_theme') === 'light';
+
+        // === 2. 初始化逻辑 (记忆功能核心) ===
+        window.onload = function() {
+            // 恢复主题
+            if(isLightMode) document.body.classList.add('light-mode');
+            
+            // 生成选书按钮
+            initBookSelector();
+            updateWrongUI();
+
+            // 检查是否有存档
+            const savedData = localStorage.getItem('forge_progress');
+            if (savedData) {
+                try {
+                    const parsed = JSON.parse(savedData);
+                    if(parsed.queue && parsed.queue.length > 0) {
+                        // 恢复存档
+                        wordQueue = parsed.queue;
+                        currentIndex = parsed.index;
+                        currentBookName = parsed.bookName;
+                        
+                        document.getElementById('current-book-name').textContent = currentBookName;
+                        document.getElementById('book-modal').style.display = 'none'; // 隐藏选书
+                        loadCard(currentIndex);
+                        showToast("已恢复上次进度！");
+                        return;
+                    }
+                } catch(e) {
+                    console.error("存档损坏，重置");
+                    localStorage.removeItem('forge_progress');
+                }
+            }
+            // 如果没有存档，显示选书框
+            document.getElementById('book-modal').style.display = 'flex';
+        };
+
+        function initBookSelector() {
+            const list = document.getElementById('book-list');
+            list.innerHTML = '';
+            books.forEach(book => {
+                const btn = document.createElement('button');
+                btn.className = 'book-btn';
+                btn.textContent = book.name;
+                btn.onclick = () => loadBook(book);
+                list.appendChild(btn);
+            });
+        }
+
+        // === 3. 加载与存档 ===
+        function loadBook(book) {
+            showToast("正在读取 " + book.name);
+            fetch(book.file)
+                .then(res => {
+                    if(!res.ok) throw new Error("文件找不到");
+                    return res.json();
+                })
+                .then(data => {
+                    // 清洗数据
+                    wordQueue = data.map(item => ({
+                        word: item.word,
+                        phonetic: item.phonetic || "",
+                        meaning: (item.translations || []).map(t => t.translation).join('; '),
+                        sentence: (item.phrases && item.phrases[0]) ? `${item.phrases[0].phrase}<br>${item.phrases[0].translation}` : "暂无例句"
+                    }));
+
+                    // 乱序
+                    wordQueue.sort(() => Math.random() - 0.5);
+                    
+                    currentIndex = 0;
+                    currentBookName = book.name;
+                    
+                    // 立即存档
+                    saveProgress();
+
+                    document.getElementById('current-book-name').textContent = book.name;
+                    document.getElementById('book-modal').style.display = 'none';
+                    loadCard(0);
+                })
+                .catch(err => alert("加载失败: " + err.message + "\n请确认使用了Live Server且路径正确"));
+        }
+
+        function saveProgress() {
+            const data = {
+                bookName: currentBookName,
+                queue: wordQueue,
+                index: currentIndex
+            };
+            try {
+                localStorage.setItem('forge_progress', JSON.stringify(data));
+            } catch (e) {
+                console.warn("存储空间已满，无法保存进度");
+            }
+        }
+
+        function resetProgress() {
+            if(confirm("确定要换书吗？当前进度将丢失。")) {
+                localStorage.removeItem('forge_progress');
+                location.reload(); // 刷新页面重新选
+            }
+        }
+
+        // === 4. 背词逻辑 ===
+        function loadCard(index) {
+            if (!wordQueue[index]) return;
+            const data = wordQueue[index];
+            const card = document.querySelector('.card-container');
+            card.classList.remove('flipped');
+            
+            document.getElementById('progress-display').textContent = `${index + 1} / ${wordQueue.length}`;
+            
+            setTimeout(() => {
+                document.getElementById('card-word').textContent = data.word;
+                document.getElementById('card-phonetic').textContent = data.phonetic;
+                document.getElementById('card-meaning').innerHTML = data.meaning;
+                document.getElementById('card-sentence').innerHTML = data.sentence;
+            }, 200);
+        }
+
+        function flipCard() {
+            document.querySelector('.card-container').classList.toggle('flipped');
+        }
+
+        function rateWord(score) {
+            if (score === 0) {
+                // 加入错题本
+                const exists = wrongWords.find(w => w.word === wordQueue[currentIndex].word);
+                if (!exists) {
+                    wrongWords.push(wordQueue[currentIndex]);
+                    localStorage.setItem('forge_wrong_words', JSON.stringify(wrongWords));
+                    updateWrongUI();
+                }
+            }
+            
+            currentIndex++;
+            saveProgress(); // 每次切换都保存
+
+            if (currentIndex >= wordQueue.length) {
+                alert("本轮单词背完了！");
+                currentIndex = 0;
+            }
+            loadCard(currentIndex);
+        }
+
+        // === 5. 辅助功能 ===
+        function updateWrongUI() {
+            document.getElementById('wrong-count').textContent = wrongWords.length;
+            const container = document.getElementById('wrong-container');
+            container.innerHTML = '';
+            wrongWords.forEach((item, idx) => {
+                const div = document.createElement('div');
+                div.className = 'list-item';
+                div.innerHTML = `<div><b>${item.word}</b><br><small>${item.meaning.substring(0,20)}...</small></div><button onclick="removeWrong(${idx})" style="background:red;color:white;border:none;padding:5px">X</button>`;
+                container.appendChild(div);
+            });
+        }
+
+        function removeWrong(idx) {
+            wrongWords.splice(idx, 1);
+            localStorage.setItem('forge_wrong_words', JSON.stringify(wrongWords));
+            updateWrongUI();
+        }
+        
+        function clearWrongBook() {
+            if(confirm("确定清空错题吗？")) {
+                wrongWords = [];
+                localStorage.setItem('forge_wrong_words', "[]");
+                updateWrongUI();
+            }
+        }
+
+        function exportPDF() {
+            if(wrongWords.length === 0) return alert("错题本为空");
+            const w = window.open();
+            let html = "<h1>生词本</h1><table border='1' style='border-collapse:collapse;width:100%'><tr><th>单词</th><th>释义</th></tr>";
+            wrongWords.forEach(i => html += `<tr><td>${i.word}</td><td>${i.meaning}</td></tr>`);
+            html += "</table>";
+            w.document.write(html);
+            w.print();
+        }
+
+        function playAudio() {
+            if(!wordQueue[currentIndex]) return;
+            const u = new SpeechSynthesisUtterance(wordQueue[currentIndex].word);
+            u.lang = 'en-US';
+            window.speechSynthesis.speak(u);
+        }
+
+        function switchTab(id) {
+            document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
+            document.getElementById(`section-${id}`).classList.add('active');
+        }
+
+        function toggleTheme() {
+            isLightMode = !isLightMode;
+            document.body.classList.toggle('light-mode', isLightMode);
+            localStorage.setItem('forge_theme', isLightMode ? 'light' : 'dark');
+        }
+
+        function toggleStats() {
+            document.getElementById('stats-panel').classList.toggle('open');
+        }
+
+        function showToast(text) {
+            const t = document.getElementById('toast');
+            t.textContent = text; t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 2000);
+        }
+    </script>
+</body>
+</html>
