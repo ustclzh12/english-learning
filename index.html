@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>THE FORGE - 旗舰版</title>
+    <title>THE FORGE - V6.0 旗舰修正版</title>
     <style>
         /* === 1. 核心视觉系统 === */
         :root {
@@ -28,7 +28,7 @@
             .sidebar {
                 flex-direction: row !important; position: fixed; bottom: 0; width: 100%; height: 60px;
                 border-top: 1px solid var(--border); border-right: none !important; padding: 0 !important;
-                justify-content: space-around; z-index: 100; overflow-x: auto; /* 允许横向滚动以容纳更多按钮 */
+                justify-content: space-around; z-index: 100; overflow-x: auto;
             }
             .sidebar .logo { display: none; }
             .nav-item { flex-direction: column; font-size: 10px; padding: 5px 10px !important; gap: 2px !important; min-width: 60px; justify-content: center; }
@@ -48,15 +48,14 @@
         .logo { font-size: 20px; font-weight: bold; color: var(--accent); letter-spacing: 1px; margin-bottom: 15px; cursor: pointer;}
         .nav-item { padding: 12px; border-radius: 8px; cursor: pointer; transition: 0.2s; color: var(--sub-text); display: flex; align-items: center; gap: 10px; }
         .nav-item:hover, .nav-item.active { background-color: var(--bg); color: var(--text); }
-        .nav-icon { font-size: 18px; }
 
         /* === 主区域 === */
-        .main-area { position: relative; width: 100%; height: 100%; overflow-y: auto; overflow-x: hidden; padding-bottom: 80px; }
+        .main-area { position: relative; width: 100%; height: 100%; overflow-y: auto; overflow-x: hidden; padding-bottom: 100px; } /* 底部留白给批量操作栏 */
         .page-section { display: none; padding: 20px; min-height: 100%; flex-direction: column; align-items: center; justify-content: center; animation: fadeIn 0.3s; }
         .page-section.active { display: flex; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        /* 卡片系统 */
+        /* 背词卡片 */
         .card-container { width: 100%; max-width: 500px; height: 450px; perspective: 1000px; cursor: pointer; margin-bottom: 20px; position: relative;}
         .card-inner { position: relative; width: 100%; height: 100%; text-align: center; transition: transform 0.5s; transform-style: preserve-3d; box-shadow: 0 10px 30px var(--shadow); border-radius: 20px; }
         .card-container.flipped .card-inner { transform: rotateY(180deg); }
@@ -68,7 +67,7 @@
         .meaning { font-size: 18px; margin-bottom: 15px; color: var(--success); line-height: 1.5; width: 100%; max-height: 100px; overflow-y: auto;}
         .sentence { font-style: italic; color: var(--sub-text); margin: 10px 0; padding: 12px; background: var(--bg); border-radius: 10px; width: 100%; text-align: left; border-left: 3px solid var(--accent); font-size: 14px; max-height: 80px; overflow-y: auto;}
 
-        /* 深度搜索按钮组 */
+        /* 深度搜索按钮 */
         .search-links { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-top: auto; width: 100%; }
         .link-btn { font-size: 12px; padding: 6px 10px; border-radius: 15px; background: var(--bg); border: 1px solid var(--border); color: var(--sub-text); text-decoration: none; transition: 0.2s; }
         .link-btn:hover { border-color: var(--accent); color: var(--accent); }
@@ -77,20 +76,31 @@
         .btn-control { flex: 1; padding: 15px; border: none; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; color: #fff; transition: 0.1s; box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
         .btn-control:active { transform: scale(0.95); }
 
-        /* 错题本 */
-        .list-container { width: 100%; max-width: 600px; display: grid; gap: 10px; }
-        .list-item { background: var(--card); padding: 15px; border-radius: 8px; border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
-        .btn-mini { padding: 5px 12px; border-radius: 4px; border: none; cursor: pointer; font-size: 12px; margin-left: 5px; color: white; }
+        /* 错题本列表 */
+        .list-container { width: 100%; max-width: 600px; display: grid; gap: 10px; margin-bottom: 60px; }
+        .list-item { background: var(--card); padding: 15px; border-radius: 8px; border: 1px solid var(--border); display: flex; align-items: center; gap: 10px; transition: 0.2s; }
+        .list-item.selected { border-color: var(--accent); background: rgba(187, 134, 252, 0.1); }
+        .checkbox { width: 20px; height: 20px; cursor: pointer; accent-color: var(--accent); }
+        
+        /* 批量操作栏 */
+        .bulk-actions { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--card); padding: 10px 20px; border-radius: 50px; box-shadow: 0 5px 20px rgba(0,0,0,0.5); display: flex; gap: 10px; z-index: 100; border: 1px solid var(--accent); display: none; }
+        .bulk-actions.show { display: flex; }
+        .bulk-btn { background: none; border: none; color: var(--text); cursor: pointer; font-size: 14px; padding: 5px 10px; border-radius: 20px; display: flex; align-items: center; gap: 5px; }
+        .bulk-btn:hover { background: var(--bg); color: var(--accent); }
 
-        /* 题型通用样式 (Quiz & Cloze) */
+        /* Quiz 样式优化 */
         .quiz-container { width: 100%; max-width: 500px; text-align: center; }
-        .quiz-question { font-size: 24px; color: var(--text); margin-bottom: 30px; line-height: 1.5; }
+        .quiz-question { font-size: 32px; font-weight: bold; color: var(--text); margin-bottom: 30px; }
         .quiz-options { display: grid; gap: 15px; }
-        .quiz-btn { padding: 15px; background: var(--card); border: 1px solid var(--border); color: var(--text); border-radius: 10px; cursor: pointer; font-size: 16px; text-align: left; transition: 0.2s; }
-        .quiz-btn:hover { border-color: var(--accent); background: var(--bg); }
+        .quiz-btn { padding: 15px; background: var(--card); border: 1px solid var(--border); color: var(--text); border-radius: 10px; cursor: pointer; font-size: 16px; text-align: left; transition: 0.2s; position: relative; }
+        .quiz-btn:hover { border-color: var(--accent); }
         .quiz-btn.correct { background: var(--success); color: black; border-color: var(--success); }
         .quiz-btn.wrong { background: var(--danger); color: white; border-color: var(--danger); }
-        .cloze-blank { border-bottom: 2px solid var(--accent); color: var(--accent); font-weight: bold; padding: 0 5px; }
+        /* 揭示答案的小字 */
+        .reveal-text { display: block; font-size: 12px; margin-top: 5px; opacity: 0.8; font-weight: bold; }
+        
+        .quiz-footer { margin-top: 20px; display: flex; gap: 10px; justify-content: center; opacity: 0; pointer-events: none; transition: 0.3s; }
+        .quiz-footer.show { opacity: 1; pointer-events: all; }
 
         /* 右侧面板 */
         .stats-panel { background-color: var(--sidebar); border-left: 1px solid var(--border); padding: 20px; display: flex; flex-direction: column; gap: 20px; overflow-y: auto;}
@@ -108,7 +118,6 @@
 </head>
 <body>
 
-    <!-- 手机顶部 -->
     <div class="mobile-header">
         <div class="logo">⚡ THE FORGE</div>
         <div style="font-size: 24px; cursor: pointer;" onclick="toggleStats()">📊</div>
@@ -122,7 +131,6 @@
         </div>
     </div>
 
-    <!-- 导航栏 -->
     <div class="sidebar">
         <div class="logo desktop-only">⚡ THE FORGE</div>
         <div class="nav-item active" onclick="switchTab('learn')"><span class="nav-icon">🏠</span><span class="nav-text">背单词</span></div>
@@ -133,14 +141,17 @@
         <div class="nav-item" onclick="resetProgress()"><span class="nav-icon">🔄</span><span class="nav-text">换书</span></div>
     </div>
 
-    <!-- 主区域 -->
     <div class="main-area">
         
         <!-- 1. 背词模式 -->
         <div id="section-learn" class="page-section active">
-            <div style="margin-bottom: 10px; color: var(--sub-text); font-size: 14px;">
-                <span id="learn-mode-tag" style="background:var(--accent); color:black; padding:2px 6px; border-radius:4px; font-size:10px; vertical-align:middle; display:none">复习中</span>
-                当前词书: <span id="current-book-name" style="color:var(--accent); font-weight:bold">未选择</span>
+            <!-- 修复：顶部状态栏 + 退出按钮 -->
+            <div style="width:100%; max-width:500px; display:flex; justify-content:space-between; align-items:center; margin-bottom:10px">
+                <div style="color: var(--sub-text); font-size: 14px;">
+                    <span id="learn-mode-tag" style="background:var(--accent); color:black; padding:2px 6px; border-radius:4px; font-size:10px; display:none; margin-right:5px">错题复习中</span>
+                    书名: <span id="current-book-name" style="color:var(--accent); font-weight:bold">...</span>
+                </div>
+                <button id="exit-mistake-btn" onclick="exitMistakeMode()" style="display:none; background:var(--bg); border:1px solid var(--sub-text); color:var(--text); padding:5px 10px; border-radius:15px; font-size:12px; cursor:pointer;">↩ 退出复习</button>
             </div>
             
             <div class="card-container" onclick="flipCard()">
@@ -154,14 +165,11 @@
                     <div class="card-face card-back">
                         <div class="meaning" id="card-meaning">...</div>
                         <div class="sentence" id="card-sentence">...</div>
-                        
-                        <!-- 新增：深度学习区 -->
                         <div style="margin-top:auto; width:100%">
-                            <div style="font-size:10px; color:var(--sub-text); margin-bottom:5px">🔍 在线深度学习</div>
                             <div class="search-links">
-                                <a href="#" onclick="openSearch(event, 'etym')" class="link-btn">🌱 词根词缀</a>
-                                <a href="#" onclick="openSearch(event, 'cambridge')" class="link-btn">🇬🇧 剑桥(搭配)</a>
-                                <a href="#" onclick="openSearch(event, 'thesaurus')" class="link-btn">🔗 近义词</a>
+                                <a href="#" onclick="openSearch(event, 'etym')" class="link-btn">🌱 词根</a>
+                                <a href="#" onclick="openSearch(event, 'cambridge')" class="link-btn">🇬🇧 搭配</a>
+                                <a href="#" onclick="openSearch(event, 'thesaurus')" class="link-btn">🔗 近义</a>
                                 <a href="#" onclick="openSearch(event, 'bing')" class="link-btn">🖼️ 图片</a>
                             </div>
                         </div>
@@ -175,39 +183,46 @@
             </div>
         </div>
 
-        <!-- 2. 错题本 -->
+        <!-- 2. 错题本 (含批量操作) -->
         <div id="section-wrong" class="page-section">
             <h2 style="color:var(--text); margin-bottom: 20px;">📓 错题本</h2>
-            <div style="display:flex; gap:10px; margin-bottom: 20px; flex-wrap:wrap; justify-content:center;">
-                <button class="btn-mini" style="background:var(--accent); padding:10px 20px;" onclick="startMistakeReview()">🚀 模式：只背错题</button>
-                <button class="btn-mini" style="background:var(--info); padding:10px 20px;" onclick="exportPDF()">🖨️ 打印PDF</button>
-                <button class="btn-mini" style="background:var(--danger); padding:10px 20px;" onclick="clearWrongBook()">🗑️ 清空</button>
+            <div style="width:100%; max-width:600px; display:flex; justify-content:space-between; margin-bottom:10px; color:var(--sub-text); font-size:12px">
+                <label style="display:flex; align-items:center; gap:5px; cursor:pointer">
+                    <input type="checkbox" onchange="toggleSelectAll(this)"> 全选
+                </label>
+                <span id="selected-count">已选: 0</span>
             </div>
             <div class="list-container" id="wrong-container"></div>
+            
+            <!-- 悬浮批量操作栏 -->
+            <div class="bulk-actions" id="bulk-bar">
+                <button class="bulk-btn" onclick="bulkReview()">🚀 复习选中</button>
+                <button class="bulk-btn" onclick="bulkAI()">🤖 AI阅读</button>
+                <button class="bulk-btn" style="color:var(--danger)" onclick="bulkDelete()">🗑️ 删除</button>
+            </div>
         </div>
 
-        <!-- 3. 选词测试 (Quiz) -->
+        <!-- 3. 选词测试 (修正版) -->
         <div id="section-quiz" class="page-section">
             <h2 style="margin-bottom:20px; color:var(--sub-text)">🎯 选词测试 (4选1)</h2>
             <div class="quiz-container">
-                <div class="quiz-question" id="quiz-word" style="font-size:40px; font-weight:bold; margin-bottom:40px">Word</div>
-                <div class="quiz-options" id="quiz-options">
-                    <!-- 选项由JS生成 -->
+                <div class="quiz-question" id="quiz-word">Word</div>
+                <div class="quiz-options" id="quiz-options"></div>
+                
+                <!-- 底部操作栏 -->
+                <div class="quiz-footer" id="quiz-footer">
+                    <button class="btn-control" style="background:var(--danger); font-size:14px; padding:10px" onclick="addQuizToMistake()">📓 加入错题</button>
+                    <button class="btn-control" style="background:var(--accent); font-size:14px; padding:10px" onclick="generateQuiz()">➡️ 下一题</button>
                 </div>
             </div>
         </div>
 
-        <!-- 4. 完形填空 (Cloze) -->
+        <!-- 4. 完形填空 -->
         <div id="section-cloze" class="page-section">
             <h2 style="margin-bottom:20px; color:var(--sub-text)">🧩 真题语境填空</h2>
             <div class="quiz-container">
-                <div class="quiz-question" id="cloze-sentence" style="font-size:20px; text-align:left; background:var(--card); padding:20px; border-radius:10px; border:1px solid var(--border)">
-                    Thinking is the hardest work there is, which is probably the reason why so few engage in it.
-                </div>
-                <div style="margin:20px 0; color:var(--sub-text)">请选择缺失的单词：</div>
-                <div class="quiz-options" id="cloze-options">
-                    <!-- 选项由JS生成 -->
-                </div>
+                <div class="quiz-question" id="cloze-sentence" style="font-size:20px; text-align:left; background:var(--card); padding:20px; border-radius:10px; border:1px solid var(--border)">Loading...</div>
+                <div class="quiz-options" id="cloze-options" style="margin-top:20px"></div>
             </div>
         </div>
 
@@ -232,7 +247,7 @@
     <div class="toast" id="toast">提示</div>
 
     <script>
-        // === 1. 配置路径 (适配 GitHub Pages) ===
+        // === 配置路径 ===
         const books = [
             { name: "初中词汇", file: "json/1-初中-顺序.json" },
             { name: "高中词汇", file: "json/2-高中-顺序.json" },
@@ -244,38 +259,39 @@
         ];
 
         // 全局变量
-        let wordQueue = []; // 当前背诵队列
-        let mainQueue = []; // 主词库备份
+        let fullBookQueue = []; // 完整书本数据 (用于恢复)
+        let currentQueue = [];  // 当前背诵队列
         let currentIndex = 0;
         let currentBookName = "";
         let wrongWords = JSON.parse(localStorage.getItem('forge_wrong_words')) || [];
         let isLightMode = localStorage.getItem('forge_theme') === 'light';
-        let isMistakeMode = false; // 是否处于错题复习模式
+        let isMistakeMode = false;
+        let selectedMistakeIndices = new Set(); // 存储选中的错题索引
+        let currentQuizCorrectWord = null; // 当前Quiz的正确单词对象
 
-        // === 2. 初始化 ===
+        // === 初始化 ===
         window.onload = function() {
             if(isLightMode) document.body.classList.add('light-mode');
             initBookSelector();
             updateWrongUI();
 
-            // 检查存档
-            const savedData = localStorage.getItem('forge_progress_v5');
+            const savedData = localStorage.getItem('forge_progress_v6');
             if (savedData) {
                 try {
                     const parsed = JSON.parse(savedData);
                     if(parsed.queue && parsed.queue.length > 0) {
-                        wordQueue = parsed.queue;
-                        mainQueue = parsed.queue; // 假设上次没背完的是全部
+                        currentQueue = parsed.queue;
+                        fullBookQueue = parsed.fullQueue || parsed.queue; // 兼容旧版
                         currentIndex = parsed.index;
                         currentBookName = parsed.bookName;
                         
                         document.getElementById('current-book-name').textContent = currentBookName;
                         document.getElementById('book-modal').style.display = 'none';
                         loadCard(currentIndex);
-                        showToast("已恢复上次进度");
+                        showToast("已恢复进度");
                         return;
                     }
-                } catch(e) { localStorage.removeItem('forge_progress_v5'); }
+                } catch(e) { localStorage.removeItem('forge_progress_v6'); }
             }
             document.getElementById('book-modal').style.display = 'flex';
         };
@@ -292,26 +308,23 @@
             });
         }
 
-        // === 3. 数据加载 ===
+        // === 核心数据逻辑 ===
         function loadBook(book) {
-            showToast("正在加载 " + book.name);
-            fetch(book.file).then(res => {
-                if(!res.ok) throw new Error("文件404");
-                return res.json();
-            }).then(data => {
-                wordQueue = cleanData(data);
-                wordQueue.sort(() => Math.random() - 0.5); // 乱序
-                mainQueue = [...wordQueue]; // 备份完整列表用于出题干扰项
+            showToast("加载中...");
+            fetch(book.file).then(res => res.json()).then(data => {
+                fullBookQueue = cleanData(data);
+                fullBookQueue.sort(() => Math.random() - 0.5); // 乱序
+                currentQueue = [...fullBookQueue]; // 复制一份作为当前背诵队列
                 
                 currentIndex = 0;
                 currentBookName = book.name;
                 isMistakeMode = false;
                 
                 saveProgress();
-                document.getElementById('current-book-name').textContent = book.name;
+                updateLearnUI();
                 document.getElementById('book-modal').style.display = 'none';
                 loadCard(0);
-            }).catch(e => alert("加载失败: " + e.message + "\n请确认使用了Live Server且路径正确(需包含json文件夹)"));
+            }).catch(e => alert("加载失败，请检查路径"));
         }
 
         function cleanData(data) {
@@ -319,34 +332,35 @@
                 word: item.word,
                 phonetic: item.phonetic || "",
                 meaning: (item.translations || []).map(t => t.translation).join('; '),
-                sentence: (item.phrases && item.phrases[0]) ? `${item.phrases[0].phrase}<br>${item.phrases[0].translation}` : "No sentence available."
+                sentence: (item.phrases && item.phrases[0]) ? `${item.phrases[0].phrase}<br>${item.phrases[0].translation}` : "No sentence."
             }));
         }
 
         function saveProgress() {
-            if(isMistakeMode) return; // 错题模式不保存为主进度
-            localStorage.setItem('forge_progress_v5', JSON.stringify({
+            if(isMistakeMode) return;
+            localStorage.setItem('forge_progress_v6', JSON.stringify({
                 bookName: currentBookName,
-                queue: wordQueue,
+                queue: currentQueue,
+                fullQueue: fullBookQueue,
                 index: currentIndex
             }));
         }
 
         function resetProgress() {
-            if(confirm("确定换书吗？当前进度将重置。")) {
-                localStorage.removeItem('forge_progress_v5');
+            if(confirm("确定换书？")) {
+                localStorage.removeItem('forge_progress_v6');
                 location.reload();
             }
         }
 
-        // === 4. 背词逻辑 ===
+        // === 背词逻辑 ===
         function loadCard(index) {
-            if (!wordQueue[index]) return;
-            const data = wordQueue[index];
+            if (!currentQueue[index]) return;
+            const data = currentQueue[index];
             const card = document.querySelector('.card-container');
             card.classList.remove('flipped');
             
-            let progressText = isMistakeMode ? `错题复习: ${index + 1} / ${wordQueue.length}` : `${index + 1} / ${wordQueue.length}`;
+            let progressText = isMistakeMode ? `错题复习: ${index + 1} / ${currentQueue.length}` : `${index + 1} / ${currentQueue.length}`;
             document.getElementById('progress-display').textContent = progressText;
             
             setTimeout(() => {
@@ -362,105 +376,151 @@
         }
 
         function rateWord(score) {
-            const currentWord = wordQueue[currentIndex];
-            
+            const currentWord = currentQueue[currentIndex];
             if (score === 0) {
-                // 记不住：加入错题本
                 if (!wrongWords.find(w => w.word === currentWord.word)) {
                     wrongWords.push(currentWord);
                     localStorage.setItem('forge_wrong_words', JSON.stringify(wrongWords));
                     updateWrongUI();
                 }
             } else if (score === 1 && isMistakeMode) {
-                // 错题模式下记住了：移出错题本
-                wrongWords = wrongWords.filter(w => w.word !== currentWord.word);
-                localStorage.setItem('forge_wrong_words', JSON.stringify(wrongWords));
-                updateWrongUI();
-                showToast("已消灭该错题！");
+                // 复习模式下记住了，可以选择移除（这里暂不自动移除，防止误点）
             }
 
             currentIndex++;
             if(!isMistakeMode) saveProgress();
 
-            if (currentIndex >= wordQueue.length) {
-                alert(isMistakeMode ? "错题复习完毕！" : "本轮单词结束，即将重新乱序！");
-                if(!isMistakeMode) wordQueue.sort(() => Math.random() - 0.5);
-                currentIndex = 0;
+            if (currentIndex >= currentQueue.length) {
+                alert(isMistakeMode ? "复习完毕，即将返回主界面" : "本轮结束，即将乱序！");
+                if(isMistakeMode) {
+                    exitMistakeMode();
+                } else {
+                    currentQueue.sort(() => Math.random() - 0.5);
+                    currentIndex = 0;
+                    loadCard(0);
+                }
+            } else {
+                loadCard(currentIndex);
             }
-            loadCard(currentIndex);
         }
 
-        // === 5. 新增：深度搜索功能 ===
-        function openSearch(e, type) {
-            e.stopPropagation();
-            const word = wordQueue[currentIndex].word;
-            let url = "";
-            if(type === 'etym') url = `https://www.etymonline.com/word/${word}`;
-            if(type === 'cambridge') url = `https://dictionary.cambridge.org/zhs/%E8%AF%8D%E5%85%B8/%E8%8B%B1%E8%AF%AD-%E6%B1%89%E8%AF%AD-%E7%AE%80%E4%BD%93/${word}`;
-            if(type === 'thesaurus') url = `https://www.thesaurus.com/browse/${word}`;
-            if(type === 'bing') url = `https://cn.bing.com/images/search?q=${word}`;
-            window.open(url, '_blank');
-        }
-
-        // === 6. 新增：错题本复习模式 ===
-        function startMistakeReview() {
-            if(wrongWords.length === 0) return alert("错题本是空的，先去背词吧！");
-            wordQueue = [...wrongWords]; // 复制错题到背诵队列
-            wordQueue.sort(() => Math.random() - 0.5);
-            currentIndex = 0;
-            isMistakeMode = true;
+        // === 复习模式切换 (Bug修复核心) ===
+        function exitMistakeMode() {
+            currentQueue = [...fullBookQueue]; // 恢复主队列
+            // 尝试恢复上次进度索引，如果越界归零
+            const savedData = JSON.parse(localStorage.getItem('forge_progress_v6'));
+            currentIndex = savedData ? savedData.index : 0;
             
-            document.getElementById('learn-mode-tag').style.display = 'inline-block';
-            switchTab('learn');
-            loadCard(0);
-            showToast("进入错题复习模式");
+            isMistakeMode = false;
+            updateLearnUI();
+            loadCard(currentIndex);
+            showToast("已回到正常模式");
         }
 
+        function updateLearnUI() {
+            document.getElementById('current-book-name').textContent = currentBookName;
+            const tag = document.getElementById('learn-mode-tag');
+            const btn = document.getElementById('exit-mistake-btn');
+            
+            if(isMistakeMode) {
+                tag.style.display = 'inline-block';
+                btn.style.display = 'block';
+            } else {
+                tag.style.display = 'none';
+                btn.style.display = 'none';
+            }
+        }
+
+        // === 错题本与批量操作 ===
         function updateWrongUI() {
             document.getElementById('wrong-count').textContent = wrongWords.length;
             const container = document.getElementById('wrong-container');
             container.innerHTML = '';
+            
             wrongWords.forEach((item, idx) => {
                 const div = document.createElement('div');
                 div.className = 'list-item';
-                div.innerHTML = `<div><b>${item.word}</b><br><small>${item.meaning.substring(0,15)}...</small></div><button onclick="removeWrong(${idx})" style="background:var(--danger);color:white;border:none;padding:5px 10px;border-radius:4px">×</button>`;
+                if(selectedMistakeIndices.has(idx)) div.classList.add('selected');
+                
+                div.innerHTML = `
+                    <input type="checkbox" class="checkbox" ${selectedMistakeIndices.has(idx) ? 'checked' : ''} onchange="toggleSelect(${idx})">
+                    <div style="flex:1" onclick="toggleSelect(${idx})">
+                        <div style="font-weight:bold">${item.word}</div>
+                        <div style="font-size:12px;color:var(--sub-text)">${item.meaning.split(';')[0]}</div>
+                    </div>
+                `;
                 container.appendChild(div);
             });
+            updateBulkBar();
         }
 
-        function removeWrong(idx) {
-            wrongWords.splice(idx, 1);
+        function toggleSelect(idx) {
+            if(selectedMistakeIndices.has(idx)) selectedMistakeIndices.delete(idx);
+            else selectedMistakeIndices.add(idx);
+            updateWrongUI();
+        }
+
+        function toggleSelectAll(checkbox) {
+            if(checkbox.checked) {
+                wrongWords.forEach((_, i) => selectedMistakeIndices.add(i));
+            } else {
+                selectedMistakeIndices.clear();
+            }
+            updateWrongUI();
+        }
+
+        function updateBulkBar() {
+            const bar = document.getElementById('bulk-bar');
+            const countSpan = document.getElementById('selected-count');
+            if(countSpan) countSpan.textContent = `已选: ${selectedMistakeIndices.size}`;
+            
+            if(selectedMistakeIndices.size > 0) bar.classList.add('show');
+            else bar.classList.remove('show');
+        }
+
+        function bulkDelete() {
+            if(!confirm(`确定删除选中的 ${selectedMistakeIndices.size} 个词？`)) return;
+            wrongWords = wrongWords.filter((_, i) => !selectedMistakeIndices.has(i));
+            selectedMistakeIndices.clear();
             localStorage.setItem('forge_wrong_words', JSON.stringify(wrongWords));
             updateWrongUI();
         }
-        
-        function clearWrongBook() {
-            if(confirm("确定清空？")) {
-                wrongWords = [];
-                localStorage.setItem('forge_wrong_words', "[]");
-                updateWrongUI();
-            }
+
+        function bulkReview() {
+            const selected = wrongWords.filter((_, i) => selectedMistakeIndices.has(i));
+            if(selected.length === 0) return;
+            
+            currentQueue = [...selected];
+            currentQueue.sort(() => Math.random() - 0.5);
+            currentIndex = 0;
+            isMistakeMode = true;
+            
+            updateLearnUI();
+            switchTab('learn');
+            loadCard(0);
+            showToast(`开始复习选中的 ${selected.length} 个词`);
         }
 
-        function exportPDF() {
-            if(wrongWords.length===0) return alert("没有错题");
-            const w = window.open();
-            let html = "<h2>我的生词本</h2><table border='1' style='width:100%;border-collapse:collapse'><tr><th>单词</th><th>释义</th><th>例句</th></tr>";
-            wrongWords.forEach(i => html+=`<tr><td>${i.word}</td><td>${i.meaning}</td><td>${i.sentence}</td></tr>`);
-            html+="</table>";
-            w.document.write(html);
-            w.print();
+        function bulkAI() {
+            const selectedWords = wrongWords.filter((_, i) => selectedMistakeIndices.has(i)).map(w => w.word);
+            const prompt = `请用以下英语单词编写一篇完形填空练习题，要求包含答案和解析：\n${selectedWords.join(', ')}`;
+            
+            navigator.clipboard.writeText(prompt).then(() => {
+                alert("已复制 Prompt 到剪贴板！\n\n请去 ChatGPT/Kimi 粘贴，即可生成专属阅读题。");
+            });
         }
 
-        // === 7. 新增：选词测试 (Quiz) ===
+        // === 选词测试 (Quiz) 修正版 ===
         function generateQuiz() {
-            if(mainQueue.length < 4) return;
-            // 随机选一个正确的
-            const correct = mainQueue[Math.floor(Math.random() * mainQueue.length)];
-            // 随机选3个错误的
+            if(fullBookQueue.length < 4) return;
+            document.getElementById('quiz-footer').classList.remove('show');
+            
+            const correct = fullBookQueue[Math.floor(Math.random() * fullBookQueue.length)];
+            currentQuizCorrectWord = correct;
+            
             let options = [correct];
             while(options.length < 4) {
-                let r = mainQueue[Math.floor(Math.random() * mainQueue.length)];
+                let r = fullBookQueue[Math.floor(Math.random() * fullBookQueue.length)];
                 if(!options.includes(r)) options.push(r);
             }
             options.sort(() => Math.random() - 0.5);
@@ -472,62 +532,78 @@
             options.forEach(opt => {
                 const btn = document.createElement('div');
                 btn.className = 'quiz-btn';
-                btn.innerText = opt.meaning.split(';')[0]; // 只取第一个意思
+                btn.innerHTML = `
+                    <span>${opt.meaning.split(';')[0]}</span>
+                    <span class="reveal-text" style="display:none">(${opt.word})</span>
+                `;
                 btn.onclick = function() {
+                    // 显示所有答案
+                    document.querySelectorAll('.reveal-text').forEach(el => el.style.display = 'block');
+                    document.getElementById('quiz-footer').classList.add('show');
+                    
                     if(opt === correct) {
                         this.classList.add('correct');
-                        setTimeout(generateQuiz, 600);
                     } else {
                         this.classList.add('wrong');
+                        // 高亮正确答案
+                        Array.from(container.children).forEach(child => {
+                            if(child.innerHTML.includes(correct.word)) child.classList.add('correct');
+                        });
                     }
                 };
                 container.appendChild(btn);
             });
         }
 
-        // === 8. 新增：完形填空 (Cloze) ===
-        function generateCloze() {
-            if(mainQueue.length < 4) return;
-            // 找一个有例句的词
-            let correct;
-            let attempts = 0;
-            do {
-                correct = mainQueue[Math.floor(Math.random() * mainQueue.length)];
-                attempts++;
-            } while (correct.sentence.includes("No sentence") && attempts < 20);
-
-            // 处理例句：去掉HTML标签，找到单词位置替换
-            let rawSent = correct.sentence.replace(/<[^>]*>/g, ""); // 去除 bold 等标签
-            // 简单的正则替换（不区分大小写）
-            const regex = new RegExp(correct.word, "gi");
-            if(!regex.test(rawSent)) {
-                // 如果例句里没直接出现单词(可能是变形)，就重随一个
-                return generateCloze();
+        function addQuizToMistake() {
+            if (!wrongWords.find(w => w.word === currentQuizCorrectWord.word)) {
+                wrongWords.push(currentQuizCorrectWord);
+                localStorage.setItem('forge_wrong_words', JSON.stringify(wrongWords));
+                updateWrongUI();
+                showToast("已加入错题本");
+            } else {
+                showToast("已在错题本中");
             }
-            
-            const clozeSent = rawSent.replace(regex, `<span class="cloze-blank">____</span>`);
-            
+        }
+
+        // === 完形填空 ===
+        function generateCloze() {
+            if(fullBookQueue.length < 4) return;
+            let correct, rawSent;
+            let attempts = 0;
+            // 尝试找一个有有效例句的词
+            do {
+                correct = fullBookQueue[Math.floor(Math.random() * fullBookQueue.length)];
+                rawSent = correct.sentence;
+                attempts++;
+            } while ((rawSent.includes("No sentence") || rawSent.length < 10) && attempts < 50);
+
+            if(attempts >= 50) return document.getElementById('cloze-sentence').textContent = "例句资源不足，请换书尝试";
+
+            // 挖空
+            const regex = new RegExp(correct.word, "gi");
+            const clozeSent = rawSent.replace(regex, `<span style="border-bottom:2px solid var(--accent);color:transparent;user-select:none">____</span>`);
             document.getElementById('cloze-sentence').innerHTML = clozeSent;
-            
+
             // 选项
             let options = [correct];
             while(options.length < 4) {
-                let r = mainQueue[Math.floor(Math.random() * mainQueue.length)];
+                let r = fullBookQueue[Math.floor(Math.random() * fullBookQueue.length)];
                 if(!options.includes(r)) options.push(r);
             }
             options.sort(() => Math.random() - 0.5);
-            
+
             const container = document.getElementById('cloze-options');
             container.innerHTML = '';
             options.forEach(opt => {
                 const btn = document.createElement('div');
                 btn.className = 'quiz-btn';
-                btn.innerText = opt.word;
+                btn.textContent = opt.word;
                 btn.onclick = function() {
                     if(opt === correct) {
                         this.classList.add('correct');
-                        document.querySelector('.cloze-blank').textContent = correct.word;
-                        setTimeout(generateCloze, 1000);
+                        document.getElementById('cloze-sentence').innerHTML = rawSent.replace(regex, `<span style="color:var(--success);font-weight:bold">${correct.word}</span>`);
+                        setTimeout(generateCloze, 1500);
                     } else {
                         this.classList.add('wrong');
                     }
@@ -536,24 +612,28 @@
             });
         }
 
-        // === 辅助功能 ===
+        // === 通用功能 ===
+        function openSearch(e, type) {
+            e.stopPropagation();
+            const word = currentQueue[currentIndex].word;
+            let url = "";
+            if(type === 'etym') url = `https://www.etymonline.com/word/${word}`;
+            if(type === 'cambridge') url = `https://dictionary.cambridge.org/zhs/%E8%AF%8D%E5%85%B8/%E8%8B%B1%E8%AF%AD-%E6%B1%89%E8%AF%AD-%E7%AE%80%E4%BD%93/${word}`;
+            if(type === 'thesaurus') url = `https://www.thesaurus.com/browse/${word}`;
+            if(type === 'bing') url = `https://cn.bing.com/images/search?q=${word}`;
+            window.open(url, '_blank');
+        }
+
         function playAudio() {
-            const txt = wordQueue[currentIndex]?.word;
+            const txt = currentQueue[currentIndex]?.word;
             if(txt) window.speechSynthesis.speak(new SpeechSynthesisUtterance(txt));
         }
 
         function switchTab(id) {
             document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
             document.getElementById(`section-${id}`).classList.add('active');
-            
             if(id === 'quiz') generateQuiz();
             if(id === 'cloze') generateCloze();
-            
-            if(id === 'learn' && isMistakeMode) {
-                document.getElementById('learn-mode-tag').style.display = 'inline-block';
-            } else {
-                document.getElementById('learn-mode-tag').style.display = 'none';
-            }
         }
 
         function toggleTheme() {
